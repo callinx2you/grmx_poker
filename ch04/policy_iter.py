@@ -36,21 +36,3 @@ def get_greedy_policy(V, env, gamma):
         pi[state] = action_probs
 
     return pi
-
-
-def policy_iter(env, gamma, threshold=0.001, is_render=True):
-    pi = defaultdict(lambda: {0: 0.25, 1: 0.25, 2: 0.25, 3: 0.25})
-    V = defaultdict(lambda: 0)
-
-    while True:
-        V = policy_eval(pi, V, env, gamma, threshold)
-        new_pi = get_greedy_policy(V, env, gamma)
-
-        if is_render:
-            env.render_v(V, pi)
-
-        if new_pi == pi:
-            break
-        pi = new_pi
-
-    return pi
