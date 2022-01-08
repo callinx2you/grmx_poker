@@ -1,16 +1,13 @@
-import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'..'))
+if '__file__' in globals():
+    import os, sys
+    sys.path.append(os.path.join(os.path.dirname(__file__),'..'))
 from collections import defaultdict, deque
 import numpy as np
 from common.title_control import title_control
 
 
 class GroovyMixPoker:
-    def __init__(self, pickup=None,#['TOWA', 'IBUKI', 'NOA', 'SAKI'],
-                 titles=None,
-                        #[['TOWA', 'IBUKI'],
-                        # ['IBUKI', 'NOA', 'SAKI']],
-                 no_reset=False):
+    def __init__(self, pickup=None, titles=None, no_reset=False):
 
         # action control
         self.action_space = []
@@ -20,7 +17,6 @@ class GroovyMixPoker:
             self.action_meaning[0] = 'RESET'
         self.action_space.append(1)
         self.action_meaning[1] = 'DRAW'
-
 
         # title control
         self.unit_size, self.num_cards, self.draw_meaning, self.titles = title_control(pickup, titles)
@@ -73,7 +69,7 @@ class GroovyMixPoker:
         return seed_states
 
     def gen_all_states(self):
-        # 全ての状態の配列を返す
+        # return all states to reach
         d = []
         q = deque()
         for init_state, prob in self.init_states.items():
@@ -100,7 +96,8 @@ class GroovyMixPoker:
     def actions(self):
         return self.action_space
 
-    def reset_state(self, state): # dict{next_state: prob} を返す
+    def reset_state(self, state):
+        # return dict{next_state: prob}
         d = defaultdict(lambda: 0)
         n, y, x = state
         if y+1 == 1<<len(self.titles):
@@ -113,7 +110,11 @@ class GroovyMixPoker:
             d[(_n, _y, _x)] += prob
         return d
 
-    def next_states(self, state, action):#goal_stateのときのみ{}が返ってくる. それ以外は足して1になる
+    def next_states(self, state, action):
+        # if goal_state:
+        #     return null dict{}
+        # else:
+        #     return dict{next_state: prob}
         d = defaultdict(lambda: 0)
         n, y, x = state
         if y+1 == 1<<len(self.titles):
