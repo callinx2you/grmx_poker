@@ -1,74 +1,79 @@
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__),'..'))
 from collections import defaultdict, deque
 import numpy as np
+from common.title_control import title_control
 
 
 class GroovyMixPoker:
-    def __init__(self):
-        self.action_space = [0, 1]
-        self.action_meaning = {
-            0: "RESET",
-            1: "DRAW",
-        }
-        self.num_cards = {
-            0: 3,
-            1: 3,
-            2: 3,
-            3: 3,
-            4: 40,
-        }
-        self.draw_meaning = {
-            0: "TOWA",
-            1: "IBUKI",
-            2: "NOA",
-            3: "SAKI",
-            4: "OTHERS",
-        }
-        self.init_states = {
-            (2, 0,  0):    40*39/52/51,
-            
-            (2, 0,  1): 2* 40* 3/52/51,
-            (2, 0,  2):     3* 2/52/51,
-            (2, 0,  4): 2* 40* 3/52/51,
-            (2, 0,  8):     3* 2/52/51,
-            (2, 0, 16): 2* 40* 3/52/51,
-            (2, 0, 32):     3* 2/52/51,
-            (2, 0, 64): 2* 40* 3/52/51,
-            (2, 0,128):     3* 2/52/51,
-            
-            (2, 1,  5): 2*  3* 3/52/51,
-            (2, 0, 17): 2*  3* 3/52/51,
-            (2, 0, 20): 2*  3* 3/52/51,
-            (2, 0, 65): 2*  3* 3/52/51,
-            (2, 0, 68): 2*  3* 3/52/51,
-            (2, 2, 80): 2*  3* 3/52/51,
-        }
+    def __init__(self, pickup=None,#['TOWA', 'IBUKI', 'NOA', 'SAKI'],
+                 titles=None,
+                        #[['TOWA', 'IBUKI'],
+                        # ['IBUKI', 'NOA', 'SAKI']],
+                 no_reset=False):
+
+        # action control
+        self.action_space = []
+        self.action_meaning = {}
+        if not no_reset: # has reset action
+            self.action_space.append(0)
+            self.action_meaning[0] = 'RESET'
+        self.action_space.append(1)
+        self.action_meaning[1] = 'DRAW'
+
+
+        # title control
+        self.unit_size, self.num_cards, self.draw_meaning, self.titles = title_control(pickup, titles)
+        ### no title until Jun2021
+        #self.titles = [[0, 1], [2, 3]]    # Jul2021 (no_reset)
+        #self.titles = [[0, 1], [2, 3]]    # Aug2021 (no_reset)
+        #self.titles = [[0, 1], [2, 3]]    # Sep2021
+        #self.titles = [[0, 1], [2, 3], [3, 4, 5]]    # Oct2021
+        #self.titles = [[0, 1], [1, 2, 3]] # Nov2021
+        #self.titles = [[0, 1], [2, 3]]    # Jan2022
+
+        self.init_states = self.gen_init_states()
         self.all_states = self.gen_all_states()
-    
+
     def draw_probs(self, state):
         n, _, x = state
         probs = defaultdict(lambda: 0)
-        s = 0
-        for i in range(4):
-            probs[i] = 3 - (x % 4)
-            s       += x % 4
-            x //= 4
-        probs[4] = 40 - (n - s)
-        for i in range(5):
-            probs[i] /= 52 - n
+        for i in range(self.unit_size):
+            probs[i] = self.num_cards[i] * (1 - x&1) / (52 - n)
+            x >>= 1
+        probs[-1] = 1 - sum(probs.values())
         return probs
-    
+
     def update_title(self, x, y):
-        s = [0] * 4
-        for i in range(4):
-            s[i] = (x%4 + 3)//4
-            x //= 4
-        if s[0] and s[1]:
-            y |= 1
-        if s[1] and s[2] and s[3]:
-            y |= 2
+        for i, title in enumerate(self.titles):
+            ok = True
+            for a in title:
+                if x&(1<<a) == 0:
+                    ok = False
+            if ok:
+                y |= 1<<i
         return y
 
+    def gen_init_states(self):
+        seed_states = defaultdict(lambda: 0)
+        seed_states[(0, 0, 0)] = 1.0
+        init_num = 2
+        while init_num:
+            init_num -= 1
+            tmp_states = defaultdict(lambda: 0)
+            for s, p_state in seed_states.items():
+                for card, p_card in self.draw_probs(s).items():
+                    _n, _y, _x = s
+                    _n += 1
+                    if card != -1:
+                        _x |= 1<<card
+                    _y = self.update_title(_x, _y)
+                    tmp_states[(_n, _y, _x)] += p_state * p_card
+            seed_states = tmp_states
+        return seed_states
+
     def gen_all_states(self):
+        # 全ての状態の配列を返す
         d = []
         q = deque()
         for init_state, prob in self.init_states.items():
@@ -98,30 +103,30 @@ class GroovyMixPoker:
     def reset_state(self, state): # dict{next_state: prob} を返す
         d = defaultdict(lambda: 0)
         n, y, x = state
-        if y == 3:#is_goal
+        if y+1 == 1<<len(self.titles):
             return d
         for init_state, prob in self.init_states.items():
             _n, _y, _x = init_state
             _y |= y
-            if _y == 3:
+            if _y+1 == 1<<len(self.titles):
                 _n, _x = 0, 0
             d[(_n, _y, _x)] += prob
         return d
-    
+
     def next_states(self, state, action):#goal_stateのときのみ{}が返ってくる. それ以外は足して1になる
         d = defaultdict(lambda: 0)
         n, y, x = state
-        if y == 3:
+        if y+1 == 1<<len(self.titles):
             return d
         if action == 1: #DRAW
             for draw, prob in self.draw_probs(state).items():
                 if prob == 0:
                     continue
                 _n, _y, _x = n+1, y, x
-                if draw < 4:
-                    _x += 1<<(draw<<1)
+                if draw != -1:
+                    _x |= 1<<draw
                 _y = self.update_title(_x, _y)
-                if _y == 3:
+                if _y+1 == 1<<len(self.titles):
                     _n, _x = 0, 0
                 _state = (_n, _y, _x)
                 if _n == 7:

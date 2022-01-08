@@ -9,7 +9,7 @@ def pickup_list(pickup_str):
         return ['RINKU', 'MAHO', 'MUNI', 'REI']
 
     elif pickup_str == 'PPkey':
-        return ['KYOKO', 'SHINOBU', ' YUKA', 'ESORA']
+        return ['KYOKO', 'SHINOBU', 'YUKA', 'ESORA']
 
     elif pickup_str == 'PMaiden':
         return ['SAKI', 'IBUKI', 'TOWA', 'NOA']
@@ -22,7 +22,7 @@ def pickup_list(pickup_str):
 
     elif pickup_str == 'LLily':
         return ['MIYU', 'HARUNA', 'KURUMI', 'MIIKO']
-    
+
     ret = pickup_str.split('-')
 
     if len(ret) != 4:
@@ -65,4 +65,8 @@ def grmx_parser():
         , type=str, nargs='*')
     parser.add_argument(
         '--no_reset', help='no RESET action (just DRAW)', action='store_true')
+    parser.add_argument(
+        '--dst', help='output text name. grmx_policy_${DST}.txt'
+        , type=str, default='default')
+
     return parser.parse_args()
