@@ -8,7 +8,7 @@ DP solution for optimal policy on Poker event
 
 - ``--titles``: イベント限定称号のあるキャラクターの組み合わせを "-" つなぎで入力する.
 
-- ``--dst``: 結果ファイル名. "grmx_policy_${DST}.txt"で出力される. デフォルト名は``default``
+- ``--dst``: 結果ファイル名. "results/grmx_policy_${DST}.txt"で出力される. デフォルト名は``default``
 
 (オプション)``--no_reset``: リセット機能なしで実行する.
 

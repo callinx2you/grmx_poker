@@ -23,6 +23,6 @@ if __name__ == '__main__':
     V = value_iter(env, gamma)
     pi = get_greedy_policy(V, env, gamma)
 
-    dst_name = 'grmx_policy_' + args.dst + '.txt'
+    dst_name = 'results/grmx_policy_' + args.dst + '.txt'
     #print_policy(env, pi, V)
     write_policy(env, pi, V, dst_name)
