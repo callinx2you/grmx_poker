@@ -25,7 +25,11 @@ def pickup_list(pickup_str):
 
     ret = pickup_str.split('-')
 
-    if len(ret) != 4:
+    s = set()
+    for i in ret:
+        s.add(i)
+
+    if len(s) != 4:
         raise Exception('num of pickup members is not 4. stop.')
     return ret
 
