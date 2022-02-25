@@ -30,7 +30,7 @@ def title_control(pickup, titles):
             if m not in meaning.values():
                 meaning[cnt] = m
                 i_meaning[m] = cnt
-                if member in pickup:
+                if m in pickup:
                     cards[cnt] = 3
                 else:
                     cards[cnt] = 2
