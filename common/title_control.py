@@ -22,23 +22,18 @@ def title_control(pickup, titles):
         pickup = d.copy()
 
 
-    for i, pu in enumerate(pickup):
-        if pu in meaning.values():
-            raise Exception('picked-up member is duplicated. stop.')
-        cards[i] = 3
-        meaning[i] = pu
-        i_meaning[pu] = i
-
-
-    cnt = 4
+    cnt = 0
     titles_enum = []
     for t in titles:
         title_enum = []
         for m in t:
             if m not in meaning.values():
-                cards[cnt] = 2
                 meaning[cnt] = m
                 i_meaning[m] = cnt
+                if member in pickup:
+                    cards[cnt] = 3
+                else:
+                    cards[cnt] = 2
                 cnt += 1
             title_enum.append(i_meaning[m])
         titles_enum.append(title_enum)
